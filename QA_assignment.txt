@@ -155,7 +155,7 @@ POST with password JSON to /hash endpoint
 	actual result:
 		hash completed without error (hash matches for blank)	
 			
-4.  Post using partial JSON (no 'name' in name/value pair)
+4.  Post using partial JSON (no 'key' in key/value pair)
 	a.  open new terminal
 	b.  set port variable to 8088 (export PORT=8088)
 	c.  execute binary 
@@ -168,7 +168,7 @@ POST with password JSON to /hash endpoint
 	actual result:
 		error message stating malformed input, but seems to have been sent to hash function (takes >5 seconds)
 		
-5.  Post using partial JSON (no 'value' in name/value pair)
+5.  Post using partial JSON (no 'value' in key/value pair)
 	a.  open new terminal
 	b.  set port variable to 8088 (export PORT=8088)
 	c.  execute binary 
