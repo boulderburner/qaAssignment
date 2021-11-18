@@ -340,7 +340,7 @@ POST with shutdown:
 	c.  execute binary
 		expected result:  application is listening on set port
 	d.  use the following command to send 10 consecutive requests:
-		for pvar in {1..1-}; do j_data='{"password":"'"$pvar"'"}'; curl -X POST -H "application/json" -d $j_data http://localhost:8088/hash -w "\n%{time_total}-n"; done
+		for pvar in {1..10}; do j_data='{"password":"'"$pvar"'"}'; curl -X POST -H "application/json" -d $j_data http://localhost:8088/hash -w "\n%{time_total}-n"; done
 	e.  wait for 5 requests to complete, and immediately after the start of the 6th, in a separate terminal, execute shutdown (curl -X POST -d 'shutdown' http://localhost:8088/hash')
 	
 	expected result:  
@@ -356,7 +356,8 @@ POST with shutdown:
 	b.  set port variable to 8088 (export PORT=8088)
 	c.  execute binary
 		expected result:  application is listening on set port
-	d.  in 5 separate terminals submit POST requests to hash endpoint in rapid succession (under 5 seconds to submit all)
+	d.  use the following command to send 10 parallel requests:
+		for pvar in {1..10}; do j_data='{"password":"'"$pvar"'"}'; curl -X POST -H "application/json" -d $j_data http://localhost:8088/hash -w "\n%{time_total}-n" & done
 	e.  before requests from previous step complete, execute shutdown (curl -X POST -d 'shutdown' http://localhost:8088/hash')
 	
 	expected result:  
