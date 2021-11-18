@@ -1,0 +1,627 @@
+QA Password-hashing Assignment Test Report
+
+	
+assumptions/preconditions:
+	Use of Linux Binary (Mint 64B VM on Virtualbox)
+	GTKhash installed
+	use of GTKhash to verify SHA512 BASE64
+	-w %{time_total} option used to show request processing time (with /n to add new-lines for easier reading of output)	
+	actual result in tests below is only denoted if it differed from expected result
+		
+SERVER-SIDE TESTS:
+
+1.  Verify that server with properly set PORT variable starts without error and waits for client requests
+	a.  open new terminal
+	b.  set port variable to 8088 (export PORT=8088)
+	c.  execute binary
+	d.  use the following command to check the port:  sudo lsof -i:<port>  or sudo netstat -anop |grep "broken"
+	
+	expected result:  application is listening on set port 
+					  
+
+2.  Verify that server without properly set PORT variable does not start
+	a.  open new terminal 
+	b.  execute command:  echo $PORT 
+		expected result:  no port returned
+	c.  execute binary
+	d.  use the following command to check the port:  sudo lsof -i:<port>  or sudo netstat -anop |grep "broken"
+	
+	expected result:  error is returned stating that $PORT must be set
+		
+3.  Verify that application uses PORT variable (8088 is not hard coded)
+	a.  open new terminal
+	b.  set port variable to number other than 8088
+	c.  execute binary
+	d.  use the following command to check the port:  sudo lsof -i:<port>  or sudo netstat -anop |grep "broken"
+	
+	expected result:  application is listening on set port 
+	
+4.  Verify that multiple instances can run on different ports
+	a.  set port in one terminal
+    b.  execute binary in that terminal
+		expected result = binary executes
+	c.  open a new terminal 
+	d.  set port in new terminal to different port from first terminal
+	e.  execute binary in new terminal
+	d.  use the following command to check the port:  sudo netstat -anop |grep "broken"
+	
+	expected result = binary runs and netstat shows application listening on both ports
+		
+5.  Attempt to run multiple instances with the same port
+	a.  set port in one terminal
+    b.  execute binary in that terminal
+		expected result = binary executes
+	c.  open a new terminal 
+	d.  set port in new terminal to same as first terminal
+	e.  execute binary in new terminal
+	
+	expected result = error stating port is already in use
+		
+6.  Attempt to run with invalid $PORT 
+	a.  open new terminal
+	b.  set port to invalid value (export PORT=aaaaa)
+	c.  execute binary 
+	
+	expected result:   error is returned 
+
+6.  Attempt to run with negative number $PORT 
+	a.  open new terminal
+	b.  set port to invalid value (export PORT=-8088)
+	c.  execute binary
+	
+	expected result:   error is returned 
+
+7.  Attempt to run with out-of-range $PORT
+	a.  open new terminal
+	b.  set port to out of range value (export PORT=65,536)
+	c.  execute binary 
+	
+	expected result:  invalid port error is returned	
+		
+8.  Attempt to run with upper boundary $PORT
+	a.  open new terminal
+	b.  set port to upper boundary value (export PORT=65,535)
+	c.  execute binary
+	d.  use the following command to check the port:  sudo lsof -i:<port>  or sudo netstat -anop |grep "broken"	
+	
+	expected result:  application is listening on set port	
+
+8.  Attempt to run with lower boundary $PORT
+	a.  open new terminal
+	b.  set port variable to lower boundary value (export PORT=1024)
+	c.  execute binary
+	d.  use the following command to check the port:  sudo lsof -i:<port>  or sudo netstat -anop |grep "broken"
+	
+	expected result:  application is listening on set port
+
+9.  Attempt to run with system reserved $PORT
+	a.  open new terminal
+	b.  set port variable to a system reserved value (0-1023)
+	c.  execute binary
+	
+	expected result:  permission error is returned
+
+10. Change port variable while server is running
+	a.  open new terminal
+	b.  set port variable to 8088 (export PORT=8088)
+	c.  execute binary to run in background  (./broken-hashserve.linux &)
+	d.  set port variable to 8081 (export PORT=8089)
+	e.  use the following command to check the port:  sudo lsof -i:<port>  or sudo netstat -anop |grep "broken"
+	
+	expected result:  original PID continues to run using port 8088
+		
+		
+		
+CLIENT-SIDE TESTS
+
+POST with password JSON to /hash endpoint
+
+1.  Valid POST
+	a.  open new terminal
+	b.  set port variable to 8088 (export PORT=8088)
+	c.  execute binary 
+	d.  send properly formatted request (curl -X POST -H "application/json" -d '{"password:angrymonkey"}' http://localhost:8088/hash -w "\n%{time_total}\n")
+	
+	expected result:  
+		Job identifier returned immediately  
+		Total time should be greater than 5 seconds
+		
+	actual result:
+		Job identifier NOT returned immediately
+		
+		
+2.  Post without data 
+	a.  open new terminal
+	b.  set port variable to 8088 (export PORT=8088)
+	c.  execute binary 
+	d.  send request with invalid JSON (curl -X POST -H "application/json" http://localhost:8088/hash -w "\n%{time_total}\n")
+	
+	expected result:
+		error message stating malformed input 
+		not sent to hash function
+		
+	actual result:
+		error message stating malformed input, but seems to have been sent to hash function (takes >5 seconds)
+		
+3.  Post using invalid JSON (empty data)
+	a.  open new terminal
+	b.  set port variable to 8088 (export PORT=8088)
+	c.  execute binary 
+	d.  send request with invalid JSON (curl -X POST -H "application/json" -d '{}' http://localhost:8088/hash -w "\n%{time_total}\n")
+	
+	expected result:
+		error message stating empty data
+		
+	actual result:
+		hash completed without error (hash matches for blank)	
+			
+4.  Post using partial JSON (no 'name' in name/value pair)
+	a.  open new terminal
+	b.  set port variable to 8088 (export PORT=8088)
+	c.  execute binary 
+	d.  send request with invalid JSON (curl -X POST -H "application/json" -d '{:"angrymonkey"}' http://localhost:8088/hash -w "\n%{time_total}\n")
+	
+	expected result:
+		error message stating malformed input 
+		not sent to hash function
+		
+	actual result:
+		error message stating malformed input, but seems to have been sent to hash function (takes >5 seconds)
+		
+5.  Post using partial JSON (no 'value' in name/value pair)
+	a.  open new terminal
+	b.  set port variable to 8088 (export PORT=8088)
+	c.  execute binary 
+	d.  send request with invalid JSON (curl -X POST -H "application/json" -d '{"password":}' http://localhost:8088/hash -w "\n%{time_total}\n")
+		expected result:
+	
+	expected result:
+		error message stating malformed input 
+		not sent to hash function
+		
+	actual result:
+		error message stating malformed input, but seems to have been sent to hash function (takes >5 seconds)
+
+6.  Post using JSON with key field other than 'password'
+	a.  open new terminal
+	b.  set port variable to 8088 (export PORT=8088)
+	c.  execute binary 
+	d.  send request with invalid JSON (curl -X POST -H "application/json" -d '{"pw":"angrymonkey}' http://localhost:8088/hash -w "\n%{time_total}\n")
+	
+	expected result:
+		error message stating invalid key field 
+		not sent to hash function
+	
+	actual result:
+		hash completes
+
+7.  Post using JSON with empty value field 
+	a.  open new terminal
+	b.  set port variable to 8088 (export PORT=8088)
+	c.  execute binary 
+	d.  send request with invalid JSON (curl -X POST -H "application/json" -d '{"password":""}' http://localhost:8088/hash -w "\n%{time_total}\n")
+	
+	expected result:
+		error message stating invalid password value		
+		not sent to hash function
+		
+	actual result:
+		hash completes (hash is valid for blank)
+
+8.  Post using non-UTF8 character for password 
+	a.  open new terminal
+	b.  set port variable to 8088 (export PORT=8088)
+	c.  execute binary 
+	d.  send properly formatted request (curl -X POST -H "application/json" -d '{"password:angrymonkey"}' http://localhost:8088/hash -w "\n%{time_total}\n")
+	
+	expected result:  
+		unknown
+	actual result:
+		hash completes - seems valid
+		
+9.  Post using partial JSON (no quotes in name field)
+	a.  open new terminal
+	b.  set port variable to 8088 (export PORT=8088)
+	c.  execute binary 
+	d.  send request with invalid JSON (curl -X POST -H "application/json" -d '{password:"angrymonkey"}' http://localhost:8088/hash -w "\n%{time_total}\n")
+	
+	expected result:
+		error message stating malformed input 
+		not sent to hash function
+		
+	actual result:
+		error message stating malformed input, but seems to have been sent to hash function (takes >5 seconds)		
+
+10.  Post using partial JSON (no quotes in value field)
+	a.  open new terminal
+	b.  set port variable to 8088 (export PORT=8088)
+	c.  execute binary 
+	d.  send request with invalid JSON (curl -X POST -H "application/json" -d '{"password":angrymonkey}' http://localhost:8088/hash -w "\n%{time_total}\n")
+	
+	expected result:
+		error message stating malformed input 
+		not sent to hash function
+		
+	actual result:
+		error message stating malformed input, but seems to have been sent to hash function (takes >5 seconds)		
+		
+11. Post using incorrect port
+	a.  open new terminal
+	b.  set port variable to 8088 (export PORT=8088)
+	c.  execute binary 
+	d.  send request with incorrect IP address (curl -X POST -H "application/json" -d '{"password":"angrymonkey"}' http://localhost:8081/hash -w "\n%{time_total}\n")
+	
+	expected result:
+		connection error 
+		
+12. Post using incorrect endpoint
+	a.  open new terminal
+	b.  set port variable to 8088 (export PORT=8088)
+	c.  execute binary 
+	d.  send request with incorrect IP address (curl -X POST -H "application/json" -d '{"password":"angrymonkey"}' http://localhost:8088/test -w "\n%{time_total}\n")
+	
+	expected result:
+		connection error 	
+		
+13. Post using HTTPS
+	a.  open new terminal
+	b.  set port variable to 8088 (export PORT=8088)
+	c.  execute binary 
+	d.  send request with incorrect IP address (curl -X POST -H "application/json" -d '{"password":"angrymonkey"}' https://localhost:8088/hash -w "\n%{time_total}\n")
+	
+	expected result:
+		ssl error 		
+
+14. Post with data in URL 
+	a.  open new terminal
+	b.  set port variable to 8088 (export PORT=8088)
+	c.  execute binary 
+	d.  send request with data in URL (curl -X POST http://localhost:8088/hash?'{"password":"angrymonkey"}' -w "\n%{time_total}\n")
+	
+	expected result:
+		unknown
+		
+	actual result:
+		malformed input error, but still gets counted as a processed request
+
+15. Post with extension to endpoint
+	a.  open new terminal
+	b.  set port variable to 8088 (export PORT=8088)
+	c.  execute binary 
+	d.  send request with incorrect IP address (curl -X POST -H "application/json" -d '{"password":"angrymonkey"}' http://localhost:8088/hash/test -w "\n%{time_total}\n")
+	
+	expected result:
+		POST not supported error
+			
+16. Post concurrent hash requests
+	a.  open new terminal
+	b.  set port variable to 8088 (export PORT=8088)
+	c.  execute binary 
+	d.  use the following command to execute 5 requests in parallel:
+		for pvar in {1..5}; do j_data='{"password":"'"$pvar"'"}'; curl -X POST -H "application/json" -d $j_data http://localhost:8088/hash & done
+		
+	expected result: 
+		all requests complete and return unique jobId
+	
+17. Post to non-loopback address
+	a.  open new terminal
+	b.  set port variable to 8088 (export PORT=8088)
+	c.  execute binary 
+	b.  get IP address for server by using ifconfig command
+	d.  send request using IP address rather than loopback   (curl -X POST -H "application/json" -d '{"password":"angrymonkey"}' http://10.0.2.15:8088/hash
+	
+	expected result:
+		jobid is returned immediately
+			expected result:  
+		Job identifier returned immediately  
+		Total time should be greater than 5 seconds
+		
+	actual result:
+		Job identifier NOT returned immediately
+
+POST with shutdown:
+1.  Shutdown with no pending requests
+	a.  open new terminal
+	b.  set port variable to 8088 (export PORT=8088)
+	c.  execute binary
+		expected result:  application is listening on set port
+	d.  execute shutdown (curl -X POST -D 'shutdown' http://localhost:8088/hash')
+	
+		expected result:  
+			200 is returned, application is no longer listening on set port, PID is no longer active
+			server shows shutdown messages
+		
+		actual result:
+			200 not received
+		
+2.  Shutdown with pending requests
+	a.  open new terminal
+	b.  set port variable to 8088 (export PORT=8088)
+	c.  execute binary
+		expected result:  application is listening on set port
+	d.  use the following command to send 10 consecutive requests:
+		for pvar in {1..1-}; do j_data='{"password":"'"$pvar"'"}'; curl -X POST -H "application/json" -d $j_data http://localhost:8088/hash -w "\n%{time_total}-n"; done
+	e.  wait for 5 requests to complete, and immediately after the start of the 6th, in a separate terminal, execute shutdown (curl -X POST -d 'shutdown' http://localhost:8088/hash')
+	
+		expected result:  
+			6 requests complete
+			7th - 10th requests are rejected
+			200 is returned, application is no longer listening on set port, PID is no longer active
+			server shows shutdown messages
+		actual result:
+			200 not received
+		
+3.  Shutdown with pending requests, subsequent request sent while still processing
+	a.  open new terminal
+	b.  set port variable to 8088 (export PORT=8088)
+	c.  execute binary
+		expected result:  application is listening on set port
+	d.  in 5 separate terminals submit POST requests to hash endpoint in rapid succession (under 5 seconds to submit all)
+	e.  before requests from previous step complete, execute shutdown (curl -X POST -d 'shutdown' http://localhost:8088/hash')
+	
+	expected result:  
+		all requests complete and return unique jobId
+		200 is returned, application is no longer listening on set port, PID is no longer active
+		server shows shutdown messages
+		
+	actual result:
+		200 not received		
+
+4. Post to non-loopback address
+	a.  open new terminal
+	b.  set port variable to 8088 (export PORT=8088)
+	c.  execute binary 
+	d.  get IP address for server by using ifconfig command
+	e.  send request using IP address rather than loopback   (curl -X POST -D 'shutdown' http://10.0.2.15:8088/hash')	
+	
+	expected result:  
+		200 is returned, application is no longer listening on set port, PID is no longer active
+		server shows shutdown messages
+		
+	actual result:
+		200 not received
+
+GET hash:
+
+1.  Valid GET for known job id
+	a.  open new terminal
+	b.  set port variable to 8088 (export PORT=8088)
+	c.  execute binary 
+	d.  send properly formatted POST request (curl -X POST -H "application/json" -d '{"password:angrymonkey"}' http://localhost:8088/hash -w "\n%{time_total}\n")
+		expected result:  
+		returns job ID
+	e.  send properly formatted GET request using job ID from previous step  (curl -H "application/json" http://localhost:8088/hash/<jobid> -w "\n")
+		expected result:
+		hash returned
+	f.  use GTKhash to verify that hash is correct SHA512 base64
+	
+	expected result: 
+		hash is valid 
+
+2.  GET for invalid job id (char)
+	a.  open new terminal
+	b.  set port variable to 8088 (export PORT=8088)
+	c.  execute binary 
+	d.  send properly formatted POST request (curl -X POST -H "application/json" -d '{"password:angrymonkey"}' http://localhost:8088/hash -w "\n%{time_total}\n")
+		expected result:  
+		returns job ID
+	e.  send GET request using an invalid char job id  (curl -H "application/json" http://localhost:8088/hash/a -w "\n")
+	
+	expected result:
+		syntax/parsing error returned
+
+3.  GET for invalid job id (blank)
+	a.  open new terminal
+	b.  set port variable to 8088 (export PORT=8088)
+	c.  execute binary 
+	d.  send properly formatted POST request (curl -X POST -H "application/json" -d '{"password:angrymonkey"}' http://localhost:8088/hash -w "\n%{time_total}\n")
+		expected result:  
+		returns job ID
+	e.  send GET request using a blank job id  (curl -H "application/json" http://localhost:8088/hash/ -w "\n")
+	
+	expected result:
+		syntax/parsing error returned
+
+4.  GET for invalid endpoint 
+	a.  open new terminal
+	b.  set port variable to 8088 (export PORT=8088)
+	c.  execute binary 
+	d.  send properly formatted POST request (curl -X POST -H "application/json" -d '{"password:angrymonkey"}' http://localhost:8088/hash -w "\n%{time_total}\n")
+		expected result:  
+		returns job ID
+	e.  send GET request with an invalid endpoint (curl -H "application/json" http://localhost:8088/hashed/<jobid> -w "\n")
+	
+	expected result:
+		404 - not found error
+		
+4.  GET for invalid endpoint (endpoint subdir)
+	a.  open new terminal
+	b.  set port variable to 8088 (export PORT=8088)
+	c.  execute binary 
+	d.  send properly formatted POST request (curl -X POST -H "application/json" -d '{"password:angrymonkey"}' http://localhost:8088/hash -w "\n%{time_total}\n")
+		expected result:  
+		returns job ID
+	e.  send GET request with an additional endpoint layer (curl -H "application/json" http://localhost:8088/hash/hash2/<jobid> -w "\n")
+	
+	expected result:
+		404 - not found error	
+	
+	actual result:
+		returns hash
+		
+5.  Valid GET for known job id using HTTPS
+	a.  open new terminal
+	b.  set port variable to 8088 (export PORT=8088)
+	c.  execute binary 
+	d.  send properly formatted POST request (curl -X POST -H "application/json" -d '{"password:angrymonkey"}' http://localhost:8088/hash -w "\n%{time_total}\n")
+		expected result:  
+		returns job ID
+	e.  send properly formatted GET request using job ID from previous step  (curl -H "application/json" https://localhost:8088/hash/<jobid> -w "\n")
+	
+	expected result:
+		SSL error 
+
+6.  Valid GET for known job id to non-loopback address
+	a.  open new terminal
+	b.  set port variable to 8088 (export PORT=8088)
+	c.  execute binary 
+	d.  send properly formatted POST request (curl -X POST -H "application/json" -d '{"password:angrymonkey"}' http://localhost:8088/hash -w "\n%{time_total}\n")
+		expected result:  
+		returns job ID
+	e.  get IP address for server by using ifconfig command
+	f.  send properly formatted GET request using job ID from previous step  to non-loopback address (curl -H "application/json" http://10.0.2.15:8088/hash/<jobid> -w "\n")
+		expected result:
+		hash returned
+	g.  use GTKhash to verify that hash is correct SHA512 base64
+	
+	expected result: 
+		hash is valid 
+		
+GET Stats:
+
+
+1.  Valid GET stats after 1 request
+	a.  open new terminal
+	b.  set port variable to 8088 (export PORT=8088)
+	c.  execute binary 
+	d.  send properly formatted POST request (curl -X POST -H "application/json" -d '{"password:angrymonkey"}' http://localhost:8088/hash -w "\n%{time_total}\n")
+		expected result:  
+		returns job ID
+		returns total processing time
+	e.  send properly formatted GET request to stats (curl http://localhost:8088/stats -w "\n")
+	
+	expected result:
+		TotalRequests=1, Average Time=<time of job above>
+	
+	actual result:  
+		average time is not correct
+
+2.  Valid GET stats after 5 requests 
+	a.  open new terminal
+	b.  set port variable to 8088 (export PORT=8088)
+	c.  execute binary 
+	d.  send properly formatted POST request (curl -X POST -H "application/json" -d '{"password:angrymonkey"}' http://localhost:8088/hash -w "\n%{time_total}\n")
+		expected result:  
+		returns job ID
+		returns total processing time
+	e.  repeat step d five times, make note of processing time for each
+	e.  send properly formatted GET request to stats (curl http://localhost:8088/stats -w "\n")
+	
+	expected result:
+		TotalRequests=5, Average Time=<average of time of jobs above>
+	
+	actual result:  
+		average time is not correct
+		
+3.  GET stats after failed POST request.   
+	a.  open new terminal
+	b.  set port variable to 8088 (export PORT=8088)
+	c.  execute binary 
+	d.  send request with invalid JSON no quotes in JSON (curl -X POST -H "application/json" -d '{password:angrymonkey}' http://localhost:8088/hash -w "\n%{time_total}\n")
+		expected result:  
+		malformed input error
+	e.  send properly formatted GET request to stats (curl http://localhost:8088/stats -w "\n")
+	
+	expected result:
+		TotalRequests=0; Average Time=0
+	
+	actual result:
+		TotalRequests=1; Average Time>0 
+
+4.  GET stats before any requests are sent
+	a.  open new terminal
+	b.  set port variable to 8088 (export PORT=8088)
+	c.  execute binary 
+	d.  send properly formatted GET request to stats (curl http://localhost:8088/stats -w "\n")
+	
+	expected result:
+		TotalRequests=0, Average Time=0
+	
+5.  GET for invalid endpoint (endpoint subdir)
+	a.  open new terminal
+	b.  set port variable to 8088 (export PORT=8088)
+	c.  execute binary 
+	d.  send properly formatted POST request (curl -X POST -H "application/json" -d '{"password:angrymonkey"}' http://localhost:8088/hash -w "\n%{time_total}\n")
+	e.  send GET request with an additional endpoint layer (curl http://localhost:8088/stats/stats2 -w "\n")
+	
+	expected result:
+		404 - not found error	
+		
+6.  Valid GET for stats using HTTPS
+	a.  open new terminal
+	b.  set port variable to 8088 (export PORT=8088)
+	c.  execute binary 
+	d.  send properly formatted POST request (curl -X POST -H "application/json" -d '{"password:angrymonkey"}' http://localhost:8088/hash -w "\n%{time_total}\n")
+	e.  send properly formatted GET request to stats  (curl https://localhost:8088/stats -w "\n")
+	
+	expected result:
+		SSL error 	
+		
+7.  Attempt to send data on STATS GET
+	a.  open new terminal
+	b.  set port variable to 8088 (export PORT=8088)
+	c.  execute binary 
+	d.  send properly formatted POST request (curl -X POST -H "application/json" -d '{"password:angrymonkey"}' http://localhost:8088/hash -w "\n%{time_total}\n")
+		expected result:  
+		returns job ID
+	e.  send GET request with data  (curl -d "data" https://localhost:8088/stats -w "\n")
+	
+	expected result:
+		request is refused
+	
+	actual result:  
+		request completes and returns total requests and average time
+
+8.  Valid GET stats after 1 request using non-loopback address
+	a.  open new terminal
+	b.  set port variable to 8088 (export PORT=8088)
+	c.  execute binary 
+	d.  use ifconfig to get server IP address
+	e.  send properly formatted POST request (curl -X POST -H "application/json" -d '{"password:angrymonkey"}' http://localhost:8088/hash -w "\n%{time_total}\n")
+		expected result:  
+		returns job ID
+		returns total processing time
+	r.  send properly formatted GET request to stats using non-loopback address (curl http://10.0.2.15:8088/stats -w "\n")
+	
+	expected result:
+		TotalRequests=1, Average Time=<time of job above>
+	
+	actual result:  
+		average time is not correct
+
+
+
+BUGS:
+
+1.  When submitting POST with password JSON to /hash endpoint, the jobID is not returned immediately.   It is returned after processing completes
+
+2.  Malformed input errors do not interrupt processing, blank password is still sent to hash for processing (takes 5 seconds to complete)
+
+3.  Malformed input requests are included in stats/Total Requests and Average Time calc
+
+5.  POST with empty password value is allowed and creates hash:  e.g. curl -X POST -H "application/json" -d '{"password":""}' http://localhost:8088/hash
+
+6.  The 'key' field for the JSON key/value pair does not need to be 'password', a hash will be generated regardless, but it's unclear what is hashed  
+	I.E.  -d {"junk":"angrymonkey"} will still generate unknown hash
+	
+7.  The 'Average Time' stat is not correctly calculated.  Most requests completed in just over 5 seconds (500,000ms) while the average time was around 300,000 ms (300 second)
+
+8.  Allowed to put subdirs in URL for hash get.   e.g.  curl http://localhost:8088/hash/hashed/1  - returns the hash for jobid 1
+
+9.  GET on hash endpoint allows data.   e.g.  curl -d "data" http://localhost:8088/hash/1  - returns the hash for jobid 1
+
+10.  On shutdown, HTTP 200 is not returned, although the server does shut down 
+
+
+OBSERVATIONS:
+POST is superflouous when data is sent 
+header seems superflous
+
+
+
+
+
+
+
+
+
