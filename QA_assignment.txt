@@ -38,7 +38,7 @@ SERVER-SIDE TESTS:
 	
 4.  Verify that multiple instances can run on different ports
 	a.  set port in one terminal
-    b.  execute binary in that terminal
+    	b.  execute binary in that terminal
 		expected result = binary executes
 	c.  open a new terminal 
 	d.  set port in new terminal to different port from first terminal
@@ -343,13 +343,13 @@ POST with shutdown:
 		for pvar in {1..1-}; do j_data='{"password":"'"$pvar"'"}'; curl -X POST -H "application/json" -d $j_data http://localhost:8088/hash -w "\n%{time_total}-n"; done
 	e.  wait for 5 requests to complete, and immediately after the start of the 6th, in a separate terminal, execute shutdown (curl -X POST -d 'shutdown' http://localhost:8088/hash')
 	
-		expected result:  
-			6 requests complete
-			7th - 10th requests are rejected
-			200 is returned, application is no longer listening on set port, PID is no longer active
-			server shows shutdown messages
-		actual result:
-			200 not received
+	expected result:  
+		6 requests complete
+		7th - 10th requests are rejected
+		200 is returned, application is no longer listening on set port, PID is no longer active
+		server shows shutdown messages
+	actual result:
+		200 not received
 		
 3.  Shutdown with pending requests, subsequent request sent while still processing
 	a.  open new terminal
