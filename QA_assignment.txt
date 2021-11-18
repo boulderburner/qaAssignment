@@ -308,7 +308,7 @@ POST with password JSON to /hash endpoint
 	b.  set port variable to 8088 (export PORT=8088)
 	c.  execute binary 
 	b.  get IP address for server by using ifconfig command
-	d.  send request using IP address rather than loopback   (curl -X POST -H "application/json" -d '{"password":"angrymonkey"}' http://10.0.2.15:8088/hash
+	d.  send request using IP address rather than loopback   (curl -X POST -H "application/json" -d '{"password":"angrymonkey"}' http://<ip addr>:8088/hash
 	
 	expected result:
 		jobid is returned immediately
@@ -373,7 +373,7 @@ POST with shutdown:
 	b.  set port variable to 8088 (export PORT=8088)
 	c.  execute binary 
 	d.  get IP address for server by using ifconfig command
-	e.  send request using IP address rather than loopback   (curl -X POST -D 'shutdown' http://10.0.2.15:8088/hash')	
+	e.  send request using IP address rather than loopback   (curl -X POST -D 'shutdown' http://<ip addr>:8088/hash')	
 	
 	expected result:  
 		200 is returned, application is no longer listening on set port, PID is no longer active
@@ -470,7 +470,7 @@ GET hash:
 		expected result:  
 		returns job ID
 	e.  get IP address for server by using ifconfig command
-	f.  send properly formatted GET request using job ID from previous step  to non-loopback address (curl -H "application/json" http://10.0.2.15:8088/hash/<jobid> -w "\n")
+	f.  send properly formatted GET request using job ID from previous step  to non-loopback address (curl -H "application/json" http://<ip addr>:8088/hash/<jobid> -w "\n")
 		expected result:
 		hash returned
 	g.  use GTKhash to verify that hash is correct SHA512 base64
@@ -582,7 +582,7 @@ GET Stats:
 		expected result:  
 		returns job ID
 		returns total processing time
-	r.  send properly formatted GET request to stats using non-loopback address (curl http://10.0.2.15:8088/stats -w "\n")
+	r.  send properly formatted GET request to stats using non-loopback address (curl http://<ip addr>:8088/stats -w "\n")
 	
 	expected result:
 		TotalRequests=1, Average Time=<time of job above>
