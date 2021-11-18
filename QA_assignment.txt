@@ -14,15 +14,17 @@ SERVER-SIDE TESTS:
 	a.  open new terminal
 	b.  set port variable to 8088 (export PORT=8088)
 	c.  execute binary
+	d.  use the following command to check the port:  sudo lsof -i:<port>  or sudo netstat -anop |grep "broken"
 	
 	expected result:  application is listening on set port 
-					  to check port:  sudo lsof -i:<port>  or sudo netstat -anop |grep "broken"
+					  
 
 2.  Verify that server without properly set PORT variable does not start
 	a.  open new terminal 
 	b.  execute command:  echo $PORT 
 		expected result:  no port returned
 	c.  execute binary
+	d.  use the following command to check the port:  sudo lsof -i:<port>  or sudo netstat -anop |grep "broken"
 	
 	expected result:  error is returned stating that $PORT must be set
 		
@@ -30,6 +32,7 @@ SERVER-SIDE TESTS:
 	a.  open new terminal
 	b.  set port variable to number other than 8088
 	c.  execute binary
+	d.  use the following command to check the port:  sudo lsof -i:<port>  or sudo netstat -anop |grep "broken"
 	
 	expected result:  application is listening on set port 
 	
@@ -40,6 +43,7 @@ SERVER-SIDE TESTS:
 	c.  open a new terminal 
 	d.  set port in new terminal to different port from first terminal
 	e.  execute binary in new terminal
+	d.  use the following command to check the port:  sudo netstat -anop |grep "broken"
 	
 	expected result = binary runs and netstat shows application listening on both ports
 		
@@ -77,7 +81,8 @@ SERVER-SIDE TESTS:
 8.  Attempt to run with upper boundary $PORT
 	a.  open new terminal
 	b.  set port to upper boundary value (export PORT=65,535)
-	c.  execute binary 
+	c.  execute binary
+	d.  use the following command to check the port:  sudo lsof -i:<port>  or sudo netstat -anop |grep "broken"	
 	
 	expected result:  application is listening on set port	
 
@@ -85,6 +90,7 @@ SERVER-SIDE TESTS:
 	a.  open new terminal
 	b.  set port variable to lower boundary value (export PORT=1024)
 	c.  execute binary
+	d.  use the following command to check the port:  sudo lsof -i:<port>  or sudo netstat -anop |grep "broken"
 	
 	expected result:  application is listening on set port
 
@@ -100,6 +106,7 @@ SERVER-SIDE TESTS:
 	b.  set port variable to 8088 (export PORT=8088)
 	c.  execute binary to run in background  (./broken-hashserve.linux &)
 	d.  set port variable to 8081 (export PORT=8089)
+	e.  use the following command to check the port:  sudo lsof -i:<port>  or sudo netstat -anop |grep "broken"
 	
 	expected result:  original PID continues to run using port 8088
 		
