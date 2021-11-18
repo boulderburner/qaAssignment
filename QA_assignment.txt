@@ -605,7 +605,7 @@ BUGS:
 6.  The 'key' field for the JSON key/value pair does not need to be 'password', a hash will be generated regardless, but it's unclear what is hashed  
 	I.E.  -d {"junk":"angrymonkey"} will still generate unknown hash
 	
-7.  The 'Average Time' stat is not correctly calculated.  Most requests completed in just over 5 seconds (500,000ms) while the average time was around 300,000 ms (300 second)
+7.  The 'Average Time' stat is not correctly calculated.  Most requests completed in just over 5 seconds (5,000ms) while the average time was around 300,000 ms (300 second)
 
 8.  Allowed to put subdirs in URL for hash get.   e.g.  curl http://localhost:8088/hash/hashed/1  - returns the hash for jobid 1
 
